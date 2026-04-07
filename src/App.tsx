@@ -487,7 +487,7 @@ const Hero = () => {
             className="mb-8 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-1.5 text-sm font-bold text-blue-600 ring-1 ring-inset ring-blue-600/20 dark:bg-blue-900/30 dark:text-blue-400"
           >
             <Zap size={16} />
-            <span>Trusted by 50,000+ Aspirants</span>
+            <span>Built for Serious NEET Aspirants</span>
           </motion.div>
           
           <motion.h1 
@@ -495,18 +495,26 @@ const Hero = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-7xl dark:text-white"
           >
-            Master NEET with <br className="hidden sm:block" />
-            <span className="text-gradient">Precision Practice</span>
+            NEETRise – Free NEET Practice & <br className="hidden sm:block" />
+            <span className="text-gradient">Mock Tests</span>
           </motion.h1>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="mx-auto mt-6 sm:mt-8 max-w-2xl text-lg sm:text-xl leading-relaxed text-slate-600 dark:text-slate-400"
+            className="mx-auto mt-6 sm:mt-8 max-w-3xl text-lg sm:text-xl leading-relaxed text-slate-600 dark:text-slate-400"
           >
-            The most comprehensive previous NEET MCQ bank, full-length mock tests, 
-            and AI-driven analysis. Built strictly on the NCERT pattern for 2026.
+            Practice NEET mock tests, previous year questions, and chapter-wise MCQs based on NCERT.
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mx-auto mt-4 max-w-2xl text-base text-slate-500 dark:text-slate-500"
+          >
+            Improve accuracy, speed, and confidence with smart practice.
           </motion.p>
           
           <motion.div 
@@ -558,10 +566,10 @@ const BlogSection = () => {
       <div className="mx-auto max-w-[900px] px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-left">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
-            Latest NEET Blogs
+            NEET Preparation Blogs
           </h2>
           <p className="mt-3 text-lg text-slate-500 dark:text-slate-400">
-            Expert strategies, study plans, and tips for NEET 2026
+            Expert strategies, study plans, and preparation tips to crack NEET effectively
           </p>
         </div>
 
