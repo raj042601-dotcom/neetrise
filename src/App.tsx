@@ -750,6 +750,25 @@ const BlogPage = () => {
         </div>
       </div>
 
+      {/* Explore More Articles Section */}
+      <div className="mt-16 border-t border-slate-200 pt-12 dark:border-slate-800">
+        <div className="rounded-3xl border border-slate-200 p-8 text-center dark:border-slate-800 bg-white dark:bg-slate-900">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+            📘 Explore More Articles
+          </h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto">
+            Discover more NEET preparation blogs, strategies, and chapter-wise guides.
+          </p>
+          <Link
+            to="/blog"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-8 py-4 font-bold text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-700 active:scale-95"
+          >
+            View All Blogs
+            <ArrowRight size={20} />
+          </Link>
+        </div>
+      </div>
+
       {/* Practice CTA Section */}
       <div className="mt-16 border-t border-slate-200 pt-12 dark:border-slate-800">
         <div className="rounded-3xl bg-slate-50 p-8 text-center dark:bg-slate-900/50">
@@ -1158,7 +1177,7 @@ const Quiz = ({ type = 'chapter' }: { type?: 'chapter' | 'mock' | 'daily' }) => 
     currentQuestionIndex: 0,
     userAnswers: [],
     isSubmitted: false,
-    timeLeft: type === 'mock' ? 10800 : type === 'daily' ? 600 : 3600, // 3 hours for mock, 10 mins for daily, 1 hour for chapter
+    timeLeft: type === 'mock' ? 3600 : type === 'daily' ? 600 : 3600, // 1 hour for mock, 10 mins for daily, 1 hour for chapter
     isStarted: false,
   });
 
@@ -1166,6 +1185,17 @@ const Quiz = ({ type = 'chapter' }: { type?: 'chapter' | 'mock' | 'daily' }) => 
 
   useEffect(() => {
     let unsubscribe: () => void;
+
+    // Reset state when type or route changes
+    setIsLoading(true);
+    setState({
+      currentQuestionIndex: 0,
+      userAnswers: [],
+      isSubmitted: false,
+      timeLeft: type === 'mock' ? 3600 : type === 'daily' ? 600 : 3600,
+      isStarted: false,
+    });
+    setQuizQuestions([]);
 
     const fetchQuestions = async () => {
       if (type === 'chapter') {
@@ -1384,7 +1414,7 @@ const Quiz = ({ type = 'chapter' }: { type?: 'chapter' | 'mock' | 'daily' }) => 
             </div>
             <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/50">
               <p className="text-sm text-slate-500">Time Taken</p>
-              <p className="text-2xl font-bold text-orange-600">{formatTime((type === 'mock' ? 10800 : type === 'daily' ? 600 : 3600) - state.timeLeft)}</p>
+              <p className="text-2xl font-bold text-orange-600">{formatTime((type === 'mock' ? 3600 : type === 'daily' ? 600 : 3600) - state.timeLeft)}</p>
             </div>
           </div>
 
