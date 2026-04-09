@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { HelmetProvider } from 'react-helmet-async';
+import { HelmetProvider, Helmet } from 'react-helmet-async';
 import { 
   collection, 
   addDoc, 
@@ -83,7 +83,7 @@ const CHAPTER_SEO_LIST: Record<string, string[]> = {
   chemistry: [
     "some-basic-concepts-of-chemistry",
     "structure-of-atom",
-    "classification-of-elements-and-periodicity-in-properties",
+    "periodic-table",
     "chemical-bonding-and-molecular-structure",
     "states-of-matter",
     "thermodynamics",
@@ -92,7 +92,7 @@ const CHAPTER_SEO_LIST: Record<string, string[]> = {
     "hydrogen",
     "s-block-elements",
     "p-block-elements",
-    "organic-chemistry-some-basic-principles-and-techniques",
+    "general-organic-chemistry-goc",
     "hydrocarbons",
     "environmental-chemistry"
   ],
@@ -104,18 +104,18 @@ const CHAPTER_SEO_LIST: Record<string, string[]> = {
     "morphology-of-flowering-plants",
     "anatomy-of-flowering-plants",
     "structural-organisation-in-animals",
-    "cell-the-unit-of-life",
+    "cell:-the-unit-of-life",
     "biomolecules",
     "cell-cycle-and-cell-division",
     "transport-in-plants",
     "mineral-nutrition",
-    "photosynthesis-in-higher-plants",
+    "photosynthesis",
     "respiration-in-plants",
     "plant-growth-and-development",
     "digestion-and-absorption",
     "breathing-and-exchange-of-gases",
     "body-fluids-and-circulation",
-    "excretory-products-and-their-elimination",
+    "excretory-products-and-elimination",
     "locomotion-and-movement",
     "neural-control-and-coordination",
     "chemical-coordination-and-integration"
@@ -799,12 +799,204 @@ const BlogPage = () => {
   );
 };
 
+const FAQSection = () => {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const faqs = [
+    {
+      q: "What is NEETRise?",
+      a: "NEETRise is a free online platform for NEET aspirants that provides NCERT-based MCQs, chapter-wise practice, and mock tests for Physics, Chemistry, and Biology."
+    },
+    {
+      q: "Is NEETRise free to use?",
+      a: "Yes, NEETRise is completely free. There are no hidden charges, subscriptions, or login requirements for practice."
+    },
+    {
+      q: "Are the questions based on NCERT?",
+      a: "Yes, all questions on NEETRise are strictly based on NCERT, which is essential for cracking NEET."
+    },
+    {
+      q: "How many questions are available on NEETRise?",
+      a: "NEETRise offers hundreds of MCQs across all NEET chapters, and new questions are added regularly."
+    },
+    {
+      q: "Can I practice chapter-wise questions?",
+      a: "Yes, you can practice chapter-wise MCQs for all subjects including Physics, Chemistry, and Biology."
+    },
+    {
+      q: "Does NEETRise provide mock tests?",
+      a: "Yes, NEETRise includes mock tests designed according to the NEET exam pattern to help improve accuracy and speed."
+    },
+    {
+      q: "Do I need to sign up to use NEETRise?",
+      a: "No, you can start practicing instantly without any registration."
+    },
+    {
+      q: "Is NEETRise useful for NEET 2026 preparation?",
+      a: "Yes, NEETRise is designed specifically for NEET 2026 aspirants with updated and relevant practice questions."
+    },
+    {
+      q: "Does NEETRise provide solutions?",
+      a: "Yes, each question includes a detailed solution to help you understand the concept clearly."
+    },
+    {
+      q: "Which subjects are covered on NEETRise?",
+      a: "NEETRise covers all three major subjects: Physics, Chemistry, and Biology."
+    }
+  ];
+
+  return (
+    <section className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900/50">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="mb-12 text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+            Frequently Asked Questions
+          </h2>
+          <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+            Everything you need to know about NEETRise and your NEET preparation.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((faq, index) => (
+            <motion.div
+              key={index}
+              initial={false}
+              className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950"
+            >
+              <button
+                onClick={() => setOpenIndex(openIndex === index ? null : index)}
+                className="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-900"
+              >
+                <span className="text-lg font-bold text-slate-900 dark:text-white">{faq.q}</span>
+                <ChevronRight
+                  size={20}
+                  className={cn(
+                    "text-slate-400 transition-transform duration-300",
+                    openIndex === index && "rotate-90"
+                  )}
+                />
+              </button>
+              <AnimatePresence initial={false}>
+                {openIndex === index && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                  >
+                    <div className="border-t border-slate-100 p-6 text-slate-600 dark:border-slate-800 dark:text-slate-400">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const Home = () => {
   const [scores] = useLocalStorage<any[]>('neet-scores', []);
   const recentScores = [...scores].reverse().slice(0, 3);
 
   return (
     <div className="pb-20">
+      <Helmet>
+        <title>NEETRise - Free NEET Practice & Mock Tests</title>
+        <meta name="description" content="Practice NEET mock tests, previous year questions, and chapter-wise MCQs based on NCERT. Improve accuracy, speed, and confidence with smart practice." />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is NEETRise?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "NEETRise is a free online platform for NEET aspirants that provides NCERT-based MCQs, chapter-wise practice, and mock tests for Physics, Chemistry, and Biology."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is NEETRise free to use?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, NEETRise is completely free. There are no hidden charges, subscriptions, or login requirements for practice."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Are the questions based on NCERT?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, all questions on NEETRise are strictly based on NCERT, which is essential for cracking NEET."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How many questions are available on NEETRise?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "NEETRise offers hundreds of MCQs across all NEET chapters, and new questions are added regularly."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I practice chapter-wise questions?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, you can practice chapter-wise MCQs for all subjects including Physics, Chemistry, and Biology."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does NEETRise provide mock tests?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, NEETRise includes mock tests designed according to the NEET exam pattern to help improve accuracy and speed."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Do I need to sign up to use NEETRise?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No, you can start practicing instantly without any registration."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is NEETRise useful for NEET 2026 preparation?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, NEETRise is designed specifically for NEET 2026 aspirants with updated and relevant practice questions."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does NEETRise provide solutions?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, each question includes a detailed solution to help you understand the concept clearly."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Which subjects are covered on NEETRise?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "NEETRise covers all three major subjects: Physics, Chemistry, and Biology."
+                }
+              }
+            ]
+          })}
+        </script>
+      </Helmet>
       <Hero />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid gap-4 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -965,10 +1157,10 @@ const Home = () => {
             </div>
           </div>
         )}
-
-        <BlogSection />
-
       </div>
+
+      <BlogSection />
+      <FAQSection />
     </div>
   );
 };
@@ -1647,6 +1839,10 @@ const Quiz = ({ type = 'chapter' }: { type?: 'chapter' | 'mock' | 'daily' }) => 
 const Subjects = () => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+      <Helmet>
+        <title>Subjects - NEETRise Practice Modules</title>
+        <meta name="description" content="Explore NEET practice modules for Physics, Chemistry, and Biology. Chapter-wise MCQs and detailed explanations." />
+      </Helmet>
       <div className="mb-16 text-center">
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">Choose a Subject</h1>
         <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">Select a subject to explore previous NEET practice modules.</p>
@@ -2356,7 +2552,7 @@ const Footer = () => (
 
 const ADMIN_PASSWORD = "Shubham@2006";
 
-const AdminPanel = () => {
+const AdminPanel = ({ showToast }: { showToast: (msg: string, type?: 'success' | 'error' | 'info') => void }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [activeTab, setActiveTab] = useState<'blogs' | 'subject' | 'daily' | 'mock'>('blogs');
@@ -2374,8 +2570,9 @@ const AdminPanel = () => {
     if (passwordInput === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
       localStorage.setItem("admin_auth", "true");
+      showToast("Logged in successfully", "success");
     } else {
-      alert("Access Denied");
+      showToast("Access Denied", "error");
       window.location.href = "/";
     }
   };
@@ -2460,11 +2657,11 @@ const AdminPanel = () => {
         meta: `${Math.ceil(blogForm.content.split(' ').length / 200)} min read • Added by Admin`,
         createdAt: serverTimestamp()
       });
-      alert('Blog Added Successfully');
+      showToast('Blog Added Successfully', 'success');
       setBlogForm({ title: '', category: 'STRATEGY', description: '', content: '' });
     } catch (error) {
       console.error(error);
-      alert('Failed to add blog');
+      showToast('Failed to add blog', 'error');
     } finally {
       setLoading(false);
     }
@@ -3216,8 +3413,47 @@ const AdminPanel = () => {
   );
 };
 
+const NotFound = () => (
+  <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+    <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+      <X size={40} />
+    </div>
+    <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">404</h1>
+    <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">Oops! The page you're looking for doesn't exist.</p>
+    <Link to="/" className="mt-8 rounded-xl bg-blue-600 px-8 py-4 font-bold text-white shadow-lg transition-all hover:bg-blue-700 active:scale-95">
+      Back to Home
+    </Link>
+  </div>
+);
+
+const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'info'; onClose: () => void }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+    animate={{ opacity: 1, y: 0, scale: 1 }}
+    exit={{ opacity: 0, y: 20, scale: 0.9 }}
+    className={cn(
+      "fixed bottom-8 left-1/2 z-[100] flex -translate-x-1/2 items-center gap-3 rounded-2xl px-6 py-4 shadow-2xl backdrop-blur-xl",
+      type === 'success' ? "bg-emerald-500/90 text-white" : 
+      type === 'error' ? "bg-red-500/90 text-white" : 
+      "bg-slate-900/90 text-white"
+    )}
+  >
+    {type === 'success' ? <CheckCircle2 size={20} /> : <Info size={20} />}
+    <span className="text-sm font-bold">{message}</span>
+    <button onClick={onClose} className="ml-2 rounded-lg p-1 hover:bg-white/20">
+      <X size={16} />
+    </button>
+  </motion.div>
+);
+
 export default function App() {
   const [darkMode, setDarkMode] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     if (darkMode) {
@@ -3235,6 +3471,9 @@ export default function App() {
         <ScrollToTop />
         <div className={cn("flex min-h-screen flex-col bg-slate-50 transition-colors duration-300 dark:bg-slate-950", darkMode && "dark")}>
           <Navbar darkMode={darkMode} toggleDarkMode={() => setDarkMode(!darkMode)} />
+          <AnimatePresence>
+            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+          </AnimatePresence>
           <main className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
@@ -3254,7 +3493,8 @@ export default function App() {
             <Route path="/blog/:slug" element={<BlogPage />} />
             <Route path="/blog" element={<AllBlogsPage />} />
             <Route path="/subject-questions" element={<SubjectQuestionsPage />} />
-            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/admin" element={<AdminPanel showToast={showToast} />} />
+            <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />

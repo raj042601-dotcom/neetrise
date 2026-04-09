@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { BookOpen, ArrowRight, ChevronLeft, CheckCircle2, Info, Loader2 } from 'lucide-react';
@@ -19,11 +19,10 @@ const ChapterSEOPage = () => {
   const [chapterData, setChapterData] = useState<{ name: string; id: string; questions: Question[] } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Debug log (temporary)
-  console.log("Route Params:", subjectId, chapterId);
-
   // Map metadata array to object for easier access
-  const SUBJECT_METADATA = Object.fromEntries(subjectsMetadata.map(s => [s.id, s]));
+  const SUBJECT_METADATA = useMemo(() => 
+    Object.fromEntries(subjectsMetadata.map(s => [s.id, s])), 
+  []);
 
   useEffect(() => {
     let unsubscribe: () => void;
