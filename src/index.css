@@ -32,6 +32,15 @@
 }
 
 @layer utilities {
+  .min-h-stable {
+    min-height: max(600px, 80vh);
+  }
+
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 500px;
+  }
+
   .glass {
     @apply bg-white/70 backdrop-blur-lg border border-white/20 dark:bg-slate-900/70 dark:border-slate-800/50;
   }
@@ -52,6 +61,18 @@
 /* Smooth transitions for dark mode */
 * {
   @apply transition-colors duration-500 ease-in-out;
+}
+
+/* Image stability and performance */
+img {
+  max-width: 100%;
+  height: auto;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.prose img {
+  @apply rounded-2xl shadow-lg my-8;
+  aspect-ratio: auto;
 }
 
 /* Custom scrollbar */

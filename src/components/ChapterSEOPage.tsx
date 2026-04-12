@@ -31,47 +31,61 @@ const ChapterSEOPage = () => {
       setIsLoading(true);
       try {
         const { subjects } = await import('../data/questions');
-        const subject = subjects.find(s => s.id === subjectId);
-        const chapter = subject?.chapters.find(c => c.id === chapterId);
+        const subject = subjects?.find(s => s.id === subjectId);
+        const chapter = subject?.chapters?.find(c => c.id === chapterId);
 
         if (chapter) {
-          // Fetch additional questions from Firestore
-          const q = query(
-            collection(db, 'subject_questions'),
-            orderBy('createdAt', 'asc')
-          );
+          try {
+            const q = query(
+              collection(db, 'subject_questions'),
+              orderBy('createdAt', 'asc')
+            );
 
-          unsubscribe = onSnapshot(q, (snapshot) => {
-            const firestoreQuestions = snapshot.docs
-              .map(doc => ({ id: doc.id, ...doc.data() } as any))
-              .filter(q => q.subjectId === subjectId && q.chapterId === chapter.id)
-              .map(q => {
-                const correctIdx = q.correct_option ? (q.correct_option.charCodeAt(0) - 65) : q.options.indexOf(q.answer);
-                return {
-                  id: q.id,
-                  text: q.question,
-                  options: q.options,
-                  correctAnswer: correctIdx >= 0 ? correctIdx : 0,
-                  explanation: q.reason || '',
-                  type: "Conceptual"
-                };
+            unsubscribe = onSnapshot(q, (snapshot) => {
+              try {
+                const firestoreQuestions = snapshot.docs
+                  .map(doc => ({ id: doc.id, ...doc.data() } as any))
+                  .filter(q => q?.subjectId === subjectId && q?.chapterId === chapter.id)
+                  .map(q => {
+                    const correctIdx = q?.correct_option ? (q.correct_option.charCodeAt(0) - 65) : q?.options?.indexOf(q?.answer);
+                    return {
+                      id: q?.id,
+                      text: q?.question || '',
+                      options: q?.options || [],
+                      correctAnswer: correctIdx >= 0 ? correctIdx : 0,
+                      explanation: q?.reason || '',
+                      type: "Conceptual"
+                    };
+                  });
+
+                setChapterData({
+                  name: chapter.name,
+                  id: chapter.id,
+                  questions: [...(chapter.questions || []), ...firestoreQuestions]
+                });
+                setIsLoading(false);
+              } catch (err) {
+                console.error("Error processing chapter questions snapshot:", err);
+                setIsLoading(false);
+              }
+            }, (error) => {
+              console.error("Error fetching firestore questions:", error);
+              setChapterData({
+                name: chapter.name,
+                id: chapter.id,
+                questions: chapter.questions || []
               });
-
+              setIsLoading(false);
+            });
+          } catch (err) {
+            console.error("Error setting up chapter questions listener:", err);
             setChapterData({
               name: chapter.name,
               id: chapter.id,
-              questions: [...chapter.questions, ...firestoreQuestions]
+              questions: chapter.questions || []
             });
             setIsLoading(false);
-          }, (error) => {
-            console.error("Error fetching firestore questions:", error);
-            setChapterData({
-              name: chapter.name,
-              id: chapter.id,
-              questions: chapter.questions
-            });
-            setIsLoading(false);
-          });
+          }
         } else {
           setIsLoading(false);
         }
@@ -89,8 +103,31 @@ const ChapterSEOPage = () => {
   const subject = SUBJECT_METADATA[subjectId || ''];
   const chapter = subject?.chapters.find(ch => ch.id === chapterId);
 
-  if (!isLoading && !subject) return <div className="py-20 text-center">Subject Not Found</div>;
-  if (!isLoading && !chapter) return <div className="py-20 text-center">Chapter Not Found</div>;
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 min-h-stable">
+        <div className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
+              <div className="h-4 w-32 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+            </div>
+            <div className="h-10 w-64 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+            <div className="h-4 w-96 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+          </div>
+          <div className="h-12 w-full max-w-sm animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+            <div key={i} className="h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!subject) return <div className="py-20 text-center min-h-[60vh]">Subject Not Found</div>;
+  if (!chapter) return <div className="py-20 text-center min-h-[60vh]">Chapter Not Found</div>;
   
   const formatTitle = (id: string) => {
     return id

@@ -32,7 +32,8 @@ import {
   FileText,
   Save,
   Lock,
-  LogOut
+  LogOut,
+  AlertCircle
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -128,31 +129,42 @@ function useBlogs() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'blogs'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedBlogs = snapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          ...data,
-          // Ensure createdAt is formatted if it's a timestamp
-          formattedDate: data.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-          }) : 'Recently Updated'
-        };
-      }) as any[];
-      
-      setBlogs(fetchedBlogs);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching blogs:", error);
-      setBlogs([]);
-      setLoading(false);
-    });
+    let unsubscribe: () => void;
 
-    return () => unsubscribe();
+    try {
+      const q = query(collection(db, 'blogs'), orderBy('createdAt', 'desc'));
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        try {
+          const fetchedBlogs = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data,
+              formattedDate: data?.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('en-IN', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+              }) : 'Recently Updated'
+            };
+          }) as any[];
+          
+          setBlogs(fetchedBlogs);
+          setLoading(false);
+        } catch (err) {
+          console.error("Error processing blog snapshot:", err);
+          setLoading(false);
+        }
+      }, (error) => {
+        console.error("Error fetching blogs:", error);
+        setBlogs([]);
+        setLoading(false);
+      });
+    } catch (err) {
+      console.error("Error setting up blog listener:", err);
+      setLoading(false);
+    }
+
+    return () => unsubscribe && unsubscribe();
   }, []);
 
   return { blogs, loading };
@@ -278,11 +290,18 @@ const BookmarkButton = ({ questionId }: { questionId: string }) => {
 
 const SavedQuestions = () => {
   const [bookmarks] = useLocalStorage<string[]>('bookmarks', []);
-  const allQuestions = subjects.flatMap(s => s.chapters.flatMap(c => c.questions));
-  const savedQuestions = allQuestions.filter(q => bookmarks.includes(q.id));
+  const allQuestions = useMemo(() => {
+    try {
+      return subjects?.flatMap(s => s?.chapters?.flatMap(c => c?.questions || []) || []) || [];
+    } catch (err) {
+      console.error("Error flattening questions:", err);
+      return [];
+    }
+  }, []);
+  const savedQuestions = allQuestions.filter(q => bookmarks?.includes(q?.id));
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 min-h-stable">
       <div className="mb-12">
         <div className="flex items-center gap-3 mb-4">
           <Link to="/" className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800">
@@ -562,7 +581,7 @@ const BlogSection = () => {
   const { blogs, loading } = useBlogs();
   
   return (
-    <section className="py-16 sm:py-24 bg-white dark:bg-slate-950">
+    <section className="py-16 sm:py-24 bg-white dark:bg-slate-950 cv-auto">
       <div className="mx-auto max-w-[900px] px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-left">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
@@ -574,14 +593,21 @@ const BlogSection = () => {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+          <div className="space-y-8 min-h-[400px]">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="py-8 first:pt-0">
+                <Skeleton className="h-4 w-24 mb-3" />
+                <Skeleton className="h-8 w-3/4 mb-4" />
+                <Skeleton className="h-20 w-full mb-4" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            ))}
           </div>
         ) : blogs.length === 0 ? (
           <div className="text-center py-12 text-slate-500">No blogs found. Check back later!</div>
         ) : (
           <div className="space-y-0">
-            {blogs.slice(0, 6).map((post, index) => (
+            {blogs.slice(0, 3).map((post, index) => (
               <div key={post.slug || (post as any).id} className="group relative py-8 first:pt-0 last:pb-0">
                 {index !== 0 && <div className="absolute top-0 left-0 right-0 h-px bg-slate-100 dark:bg-slate-800" />}
                 <div className="flex flex-col gap-2">
@@ -640,7 +666,7 @@ const AllBlogsPage = () => {
   });
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 lg:px-8 min-h-stable">
       <div className="mb-12">
         <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 mb-6">
           <ChevronLeft size={16} /> Back to Home
@@ -684,8 +710,15 @@ const AllBlogsPage = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        <div className="space-y-8 min-h-[600px]">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="rounded-2xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
+              <Skeleton className="h-4 w-24 mb-3" />
+              <Skeleton className="h-8 w-3/4 mb-4" />
+              <Skeleton className="h-16 w-full mb-4" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+          ))}
         </div>
       ) : filteredBlogs.length === 0 ? (
         <div className="text-center py-20">
@@ -724,15 +757,46 @@ const AllBlogsPage = () => {
   );
 };
 
+const Skeleton = ({ className }: { className?: string }) => (
+  <div className={cn("animate-pulse rounded-xl bg-slate-200 dark:bg-slate-800", className)} />
+);
+
 const BlogPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const { blogs } = useBlogs();
+  const { blogs, loading } = useBlogs();
   const post = blogs.find(p => (p.slug === slug) || ((p as any).id === slug));
 
-  if (!post) return <div className="py-20 text-center">Blog post not found</div>;
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8 min-h-stable">
+        <div className="mb-8">
+          <Skeleton className="h-6 w-32 mb-6" />
+          <Skeleton className="h-4 w-24 mb-3" />
+          <Skeleton className="h-12 w-full mb-4" />
+          <div className="mt-6 flex gap-4">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-3/4" />
+          <div className="pt-8 space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!post) return <div className="py-20 text-center min-h-[60vh]">Blog post not found</div>;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8 min-h-stable">
       <div className="mb-8">
         <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 mb-6">
           <ChevronLeft size={16} /> Back to Home
@@ -846,7 +910,7 @@ const FAQSection = () => {
   ];
 
   return (
-    <section className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900/50">
+    <section className="py-16 sm:py-24 bg-slate-50 dark:bg-slate-900/50 cv-auto">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
@@ -1173,20 +1237,31 @@ const SubjectPage = () => {
 
   useEffect(() => {
     if (!subjectId) return;
-    const q = query(collection(db, 'subject_questions'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const counts: Record<string, number> = {};
-      snapshot.docs.forEach(doc => {
-        const data = doc.data();
-        if (data.subjectId === subjectId) {
-          counts[data.chapterId] = (counts[data.chapterId] || 0) + 1;
+    let unsubscribe: () => void;
+    
+    try {
+      const q = query(collection(db, 'subject_questions'));
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        try {
+          const counts: Record<string, number> = {};
+          snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            if (data?.subjectId === subjectId) {
+              counts[data.chapterId] = (counts[data.chapterId] || 0) + 1;
+            }
+          });
+          setFirestoreCounts(counts);
+        } catch (err) {
+          console.error("Error processing subject questions snapshot:", err);
         }
+      }, (error) => {
+        console.error("Error fetching firestore counts:", error);
       });
-      setFirestoreCounts(counts);
-    }, (error) => {
-      console.error("Error fetching firestore counts:", error);
-    });
-    return () => unsubscribe();
+    } catch (err) {
+      console.error("Error setting up subject questions listener:", err);
+    }
+    
+    return () => unsubscribe && unsubscribe();
   }, [subjectId]);
 
   if (!subject) return <div className="py-20 text-center">Subject not found</div>;
@@ -1198,7 +1273,7 @@ const SubjectPage = () => {
   const seoChapters = CHAPTER_SEO_LIST[subjectId || ''] || [];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 min-h-stable">
       <div className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
         <div>
           <div className="flex items-center gap-3 mb-4">
@@ -1398,70 +1473,90 @@ const Quiz = ({ type = 'chapter' }: { type?: 'chapter' | 'mock' | 'daily' }) => 
     setQuizQuestions([]);
 
     const fetchQuestions = async () => {
-      if (type === 'chapter') {
-        const q = query(
-          collection(db, 'subject_questions'),
-          orderBy('createdAt', 'asc')
-        );
-        
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const firestoreQuestions = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as any))
-            .filter(q => q.subjectId === subjectId && q.chapterId === chapterId)
-            .map(q => {
-              const correctIdx = q.correct_option ? (q.correct_option.charCodeAt(0) - 65) : q.options.indexOf(q.answer);
-              return {
-                id: q.id,
-                text: q.question,
-                options: q.options,
-                correctAnswer: correctIdx >= 0 ? correctIdx : 0,
-                explanation: q.reason || ''
-              };
-            });
-
-          const subject = subjects.find(s => s.id === subjectId);
-          const chapter = subject?.chapters.find(c => c.id === chapterId);
-          const hardcodedQuestions = chapter?.questions || [];
+      try {
+        if (type === 'chapter') {
+          const q = query(
+            collection(db, 'subject_questions'),
+            orderBy('createdAt', 'asc')
+          );
           
-          const questions = [...hardcodedQuestions, ...firestoreQuestions];
-          setQuizQuestions(questions);
-          setIsLoading(false);
-          setState(prev => ({ 
-            ...prev, 
-            userAnswers: prev.userAnswers.length === questions.length ? prev.userAnswers : new Array(questions.length).fill(null)
-          }));
-        });
-      } else {
-        // For Mock and Daily, we can keep getDocs or use onSnapshot too
-        const collectionName = type === 'mock' ? 'mock_tests' : 'daily_practice';
-        const q = query(collection(db, collectionName));
-        
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const questions = snapshot.docs
-            .map(doc => ({ id: doc.id, ...doc.data() } as any))
-            .sort((a, b) => {
-              const aNum = parseInt(a.id.replace(/\D/g, ''));
-              const bNum = parseInt(b.id.replace(/\D/g, ''));
-              return aNum - bNum;
-            })
-            .map(q => {
-              const correctIdx = q.correct_option ? (q.correct_option.charCodeAt(0) - 65) : q.options.indexOf(q.answer);
-              return {
-                id: q.id,
-                text: q.question,
-                options: q.options,
-                correctAnswer: correctIdx >= 0 ? correctIdx : 0,
-                explanation: q.reason || ''
-              };
-            });
+          unsubscribe = onSnapshot(q, (snapshot) => {
+            try {
+              const firestoreQuestions = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() } as any))
+                .filter(q => q?.subjectId === subjectId && q?.chapterId === chapterId)
+                .map(q => {
+                  const correctIdx = q?.correct_option ? (q.correct_option.charCodeAt(0) - 65) : q?.options?.indexOf(q?.answer);
+                  return {
+                    id: q?.id,
+                    text: q?.question || '',
+                    options: q?.options || [],
+                    correctAnswer: correctIdx >= 0 ? correctIdx : 0,
+                    explanation: q?.reason || ''
+                  };
+                });
 
-          setQuizQuestions(questions);
-          setIsLoading(false);
-          setState(prev => ({ 
-            ...prev, 
-            userAnswers: prev.userAnswers.length === questions.length ? prev.userAnswers : new Array(questions.length).fill(null)
-          }));
-        });
+              const subject = subjects.find(s => s.id === subjectId);
+              const chapter = subject?.chapters?.find(c => c.id === chapterId);
+              const hardcodedQuestions = chapter?.questions || [];
+              
+              const questions = [...hardcodedQuestions, ...firestoreQuestions];
+              setQuizQuestions(questions);
+              setIsLoading(false);
+              setState(prev => ({ 
+                ...prev, 
+                userAnswers: prev.userAnswers.length === questions.length ? prev.userAnswers : new Array(questions.length).fill(null)
+              }));
+            } catch (err) {
+              console.error("Error processing chapter quiz snapshot:", err);
+              setIsLoading(false);
+            }
+          }, (error) => {
+            console.error("Firestore snapshot error:", error);
+            setIsLoading(false);
+          });
+        } else {
+          const collectionName = type === 'mock' ? 'mock_tests' : 'daily_practice';
+          const q = query(collection(db, collectionName));
+          
+          unsubscribe = onSnapshot(q, (snapshot) => {
+            try {
+              const questions = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() } as any))
+                .sort((a, b) => {
+                  const aNum = parseInt(a?.id?.replace(/\D/g, '') || '0');
+                  const bNum = parseInt(b?.id?.replace(/\D/g, '') || '0');
+                  return aNum - bNum;
+                })
+                .map(q => {
+                  const correctIdx = q?.correct_option ? (q.correct_option.charCodeAt(0) - 65) : q?.options?.indexOf(q?.answer);
+                  return {
+                    id: q?.id,
+                    text: q?.question || '',
+                    options: q?.options || [],
+                    correctAnswer: correctIdx >= 0 ? correctIdx : 0,
+                    explanation: q?.reason || ''
+                  };
+                });
+
+              setQuizQuestions(questions);
+              setIsLoading(false);
+              setState(prev => ({ 
+                ...prev, 
+                userAnswers: prev.userAnswers.length === questions.length ? prev.userAnswers : new Array(questions.length).fill(null)
+              }));
+            } catch (err) {
+              console.error("Error processing quiz snapshot:", err);
+              setIsLoading(false);
+            }
+          }, (error) => {
+            console.error("Firestore snapshot error:", error);
+            setIsLoading(false);
+          });
+        }
+      } catch (err) {
+        console.error("Error in fetchQuestions:", err);
+        setIsLoading(false);
       }
     };
 
@@ -1838,7 +1933,7 @@ const Quiz = ({ type = 'chapter' }: { type?: 'chapter' | 'mock' | 'daily' }) => 
 
 const Subjects = () => {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 min-h-stable">
       <Helmet>
         <title>Subjects - NEETRise Practice Modules</title>
         <meta name="description" content="Explore NEET practice modules for Physics, Chemistry, and Biology. Chapter-wise MCQs and detailed explanations." />
@@ -1874,7 +1969,7 @@ const HistoryPage = () => {
   const sortedScores = [...scores].reverse().slice(0, 10);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 min-h-[80vh]">
       <div className="mb-12">
         <div className="flex items-center gap-3 mb-4">
           <Link to="/" className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800">
@@ -1995,16 +2090,16 @@ const HistoryDetail = () => {
   if (!score) return <div className="py-20 text-center">Result not found</div>;
 
   const stats = score.stats || { correct: 0, incorrect: 0, unattempted: 0 };
-  const percentage = ((score.score / score.total) * 100).toFixed(1);
+  const percentage = score?.total ? ((score.score / score.total) * 100).toFixed(1) : '0.0';
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 min-h-stable">
       <div className="mb-8">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:underline mb-4">
           <ChevronLeft size={16} /> Back to History
         </button>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Test Analysis</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">Detailed breakdown of your performance on {new Date(score.date).toLocaleDateString()}.</p>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">Detailed breakdown of your performance on {score?.date ? new Date(score.date).toLocaleDateString() : 'N/A'}.</p>
       </div>
 
       <div className="grid gap-6">
@@ -2013,10 +2108,10 @@ const HistoryDetail = () => {
             <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
               <Trophy size={48} />
             </div>
-            <h2 className="text-4xl font-black text-slate-900 dark:text-white">{score.score} <span className="text-xl font-bold text-slate-400">/ {score.total}</span></h2>
+            <h2 className="text-4xl font-black text-slate-900 dark:text-white">{score?.score || 0} <span className="text-xl font-bold text-slate-400">/ {score?.total || 0}</span></h2>
             <p className="mt-2 text-lg font-bold text-blue-600">{percentage}% Accuracy</p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-1.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-              Module: <span className="capitalize">{score.type}</span> {score.subjectId && `• ${score.subjectId}`}
+              Module: <span className="capitalize">{score?.type || 'N/A'}</span> {score?.subjectId && `• ${score.subjectId}`}
             </div>
           </div>
 
@@ -2626,22 +2721,45 @@ const AdminPanel = ({ showToast }: { showToast: (msg: string, type?: 'success' |
   const [subjectQuestions, setSubjectQuestions] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubDaily = onSnapshot(collection(db, 'daily_practice'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setDailyQuestions(data);
-    });
-    const unsubMock = onSnapshot(collection(db, 'mock_tests'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setMockQuestions(data);
-    });
-    const unsubSubject = onSnapshot(collection(db, 'subject_questions'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setSubjectQuestions(data);
-    });
+    let unsubDaily: () => void;
+    let unsubMock: () => void;
+    let unsubSubject: () => void;
+
+    try {
+      unsubDaily = onSnapshot(collection(db, 'daily_practice'), (snapshot) => {
+        try {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setDailyQuestions(data);
+        } catch (err) {
+          console.error("Error processing daily questions:", err);
+        }
+      }, (err) => console.error("Daily questions listener error:", err));
+
+      unsubMock = onSnapshot(collection(db, 'mock_tests'), (snapshot) => {
+        try {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setMockQuestions(data);
+        } catch (err) {
+          console.error("Error processing mock questions:", err);
+        }
+      }, (err) => console.error("Mock questions listener error:", err));
+
+      unsubSubject = onSnapshot(collection(db, 'subject_questions'), (snapshot) => {
+        try {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setSubjectQuestions(data);
+        } catch (err) {
+          console.error("Error processing subject questions:", err);
+        }
+      }, (err) => console.error("Subject questions listener error:", err));
+    } catch (err) {
+      console.error("Error setting up admin listeners:", err);
+    }
+
     return () => {
-      unsubDaily();
-      unsubMock();
-      unsubSubject();
+      unsubDaily?.();
+      unsubMock?.();
+      unsubSubject?.();
     };
   }, []);
 
@@ -3446,8 +3564,55 @@ const Toast = ({ message, type, onClose }: { message: string; type: 'success' | 
   </motion.div>
 );
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center dark:bg-slate-950">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+            <AlertCircle size={40} />
+          </div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Something went wrong</h1>
+          <p className="mt-2 max-w-md text-slate-600 dark:text-slate-400">
+            We encountered an unexpected error. Please try refreshing the page or contact support if the problem persists.
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-8 rounded-xl bg-blue-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:bg-blue-500 active:scale-95"
+          >
+            Refresh Page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export default function App() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    try {
+      return localStorage.getItem('theme') === 'dark' || 
+        (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    } catch (err) {
+      return false;
+    }
+  });
+
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -3456,50 +3621,58 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
+    try {
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+        document.body.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.body.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    } catch (err) {
+      console.error("Error updating theme:", err);
     }
   }, [darkMode]);
 
   return (
-    <HelmetProvider>
-      <Router>
-        <ScrollToTop />
-        <div className={cn("flex min-h-screen flex-col bg-slate-50 transition-colors duration-300 dark:bg-slate-950", darkMode && "dark")}>
-          <Navbar darkMode={darkMode} toggleDarkMode={() => setDarkMode(!darkMode)} />
-          <AnimatePresence>
-            {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-          </AnimatePresence>
-          <main className="flex-1">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/subjects" element={<Subjects />} />
-              <Route path="/subject/:subjectId" element={<SubjectPage />} />
-              <Route path="/subject/:subjectId/:chapterId" element={<ChapterSEOPage />} />
-              <Route path="/quiz/:subjectId/:chapterId" element={<Quiz type="chapter" />} />
-            <Route path="/mock-test" element={<Quiz type="mock" />} />
-            <Route path="/rank-predictor" element={<RankPredictor />} />
-            <Route path="/daily-practice" element={<Quiz type="daily" />} />
-            <Route path="/saved" element={<SavedQuestions />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/history/:scoreId" element={<HistoryDetail />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/blog/:slug" element={<BlogPage />} />
-            <Route path="/blog" element={<AllBlogsPage />} />
-            <Route path="/subject-questions" element={<SubjectQuestionsPage />} />
-            <Route path="/admin" element={<AdminPanel showToast={showToast} />} />
-            <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
-    </HelmetProvider>
+    <ErrorBoundary>
+      <HelmetProvider>
+        <Router>
+          <ScrollToTop />
+          <div className={cn("flex min-h-screen flex-col bg-slate-50 transition-colors duration-300 dark:bg-slate-950", darkMode && "dark")}>
+            <Navbar darkMode={darkMode} toggleDarkMode={() => setDarkMode(!darkMode)} />
+            <AnimatePresence>
+              {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+            </AnimatePresence>
+            <main className="flex-1">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/subjects" element={<Subjects />} />
+                <Route path="/subject/:subjectId" element={<SubjectPage />} />
+                <Route path="/subject/:subjectId/:chapterId" element={<ChapterSEOPage />} />
+                <Route path="/quiz/:subjectId/:chapterId" element={<Quiz type="chapter" />} />
+                <Route path="/mock-test" element={<Quiz type="mock" />} />
+                <Route path="/rank-predictor" element={<RankPredictor />} />
+                <Route path="/daily-practice" element={<Quiz type="daily" />} />
+                <Route path="/saved" element={<SavedQuestions />} />
+                <Route path="/history" element={<HistoryPage />} />
+                <Route path="/history/:scoreId" element={<HistoryDetail />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/blog/:slug" element={<BlogPage />} />
+                <Route path="/blog" element={<AllBlogsPage />} />
+                <Route path="/subject-questions" element={<SubjectQuestionsPage />} />
+                <Route path="/admin" element={<AdminPanel showToast={showToast} />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        </Router>
+      </HelmetProvider>
+    </ErrorBoundary>
   );
 }
