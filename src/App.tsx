@@ -2632,7 +2632,7 @@ const Footer = () => (
           <Link to="/privacy" className="text-sm font-medium text-slate-400 hover:text-slate-600 dark:hover:text-white">Privacy Policy</Link>
           <Link to="/terms" className="text-sm font-medium text-slate-400 hover:text-slate-600 dark:hover:text-white">Terms of Service</Link>
           <a 
-            href="https://t.me/groupforstudentneed" 
+            href="https://t.me/neetrise" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="text-sm font-medium text-slate-400 hover:text-slate-600 dark:hover:text-white"

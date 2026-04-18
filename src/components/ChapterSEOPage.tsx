@@ -150,7 +150,7 @@ const ChapterSEOPage = () => {
 
   // SEO dynamic content
   const pageTitle = `NEET ${chapterName} NCERT-Based Questions with Solutions 2026`;
-  const pageDescription = `Practice NEET ${chapterName} NCERT-based questions with answers. Comprehensive MCQ bank with detailed explanations for NEET 2026 preparation.`;
+  const pageDescription = (chapter as any)?.description || `Practice NEET ${chapterName} NCERT-based questions with answers. Comprehensive MCQ bank with detailed explanations for NEET 2026 preparation.`;
 
   if (!subject) {
     return (
@@ -186,8 +186,14 @@ const ChapterSEOPage = () => {
           NEET {chapterName} NCERT-Based Questions
         </h1>
         <p className="mt-4 text-lg leading-relaxed text-slate-600 dark:text-slate-400">
-          Master {chapterName} for NEET 2026 with our curated collection of NCERT-based questions. 
-          Each question is strictly based on the NCERT pattern and includes detailed solutions to help you understand the core concepts.
+          {(chapter as any)?.description ? (
+            (chapter as any).description
+          ) : (
+            <>
+              Master {chapterName} for NEET 2026 with our curated collection of NCERT-based questions. 
+              Each question is strictly based on the NCERT pattern and includes detailed solutions to help you understand the core concepts.
+            </>
+          )}
         </p>
         
         {chapterData && (

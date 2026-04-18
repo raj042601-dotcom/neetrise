@@ -11,6 +11,7 @@ export interface Chapter {
   id: string;
   name: string;
   questions: Question[];
+  description?: string;
 }
 
 export interface Subject {
