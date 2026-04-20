@@ -20,10 +20,14 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  html {
+  html, body {
+    height: 100%;
     @apply transition-all duration-500;
   }
   body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
     @apply font-sans antialiased text-slate-900 bg-slate-50 transition-all duration-500;
   }
   .dark body {
@@ -67,12 +71,39 @@
 img {
   max-width: 100%;
   height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
   font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+main {
+  flex: 1;
+  min-height: 70vh;
+}
+
+.prose {
+  min-height: 60vh;
+  padding-bottom: 20px;
+}
+
+.meta-row {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.skeleton-container {
+  min-height: 65vh;
+}
+
+.dynamic-section {
+  min-height: 100px;
 }
 
 .prose img {
   @apply rounded-2xl shadow-lg my-8;
-  aspect-ratio: auto;
+  aspect-ratio: 16 / 9;
 }
 
 /* Custom scrollbar */

@@ -710,7 +710,7 @@ const AllBlogsPage = () => {
       </div>
 
       {loading ? (
-        <div className="space-y-8 min-h-[600px]">
+        <div className={cn("space-y-8 skeleton-container")}>
           {[1, 2, 3, 4].map(i => (
             <div key={i} className="rounded-2xl border border-slate-200 bg-white p-8 dark:border-slate-800 dark:bg-slate-900">
               <Skeleton className="h-4 w-24 mb-3" />
@@ -721,11 +721,11 @@ const AllBlogsPage = () => {
           ))}
         </div>
       ) : filteredBlogs.length === 0 ? (
-        <div className="text-center py-20">
+        <div className="text-center py-20 min-h-[400px]">
           <p className="text-xl text-slate-500">No blogs found matching your criteria.</p>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-8 dynamic-section">
           {filteredBlogs.map((post) => (
             <div key={post.slug || (post as any).id} className="group relative rounded-2xl border border-slate-200 bg-white p-8 transition-all hover:border-blue-500 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900">
               <div className="flex flex-col gap-2">
@@ -743,9 +743,9 @@ const AllBlogsPage = () => {
                 <p className="mt-2 text-base leading-relaxed text-slate-500 dark:text-slate-400">
                   {post.description}
                 </p>
-                <div className="mt-4 flex items-center gap-4 text-xs font-medium text-slate-400 dark:text-slate-500">
+                <div className="mt-4 meta-row text-xs font-medium text-slate-400 dark:text-slate-500">
                   <span>{post.meta}</span>
-                  <span>•</span>
+                  <span className="mx-2">•</span>
                   <span>{(post as any).formattedDate}</span>
                 </div>
               </div>
@@ -768,17 +768,17 @@ const BlogPage = () => {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8 min-h-stable">
+      <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8 min-h-stable skeleton-container">
         <div className="mb-8">
           <Skeleton className="h-6 w-32 mb-6" />
           <Skeleton className="h-4 w-24 mb-3" />
           <Skeleton className="h-12 w-full mb-4" />
-          <div className="mt-6 flex gap-4">
+          <div className="mt-6 flex gap-4 meta-row">
             <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-32" />
           </div>
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 prose prose-slate dark:prose-invert">
           <Skeleton className="h-6 w-full" />
           <Skeleton className="h-6 w-full" />
           <Skeleton className="h-6 w-3/4" />
@@ -793,10 +793,23 @@ const BlogPage = () => {
     );
   }
 
-  if (!post) return <div className="py-20 text-center min-h-[60vh]">Blog post not found</div>;
+  if (!post) return <div className="py-20 text-center min-h-[70vh]">Blog post not found</div>;
+
+  // Extract first image URL for LCP optimization
+  const firstImageMatch = post.content.match(/!\[.*?\]\((.*?)\)/);
+  const firstImageUrl = firstImageMatch ? firstImageMatch[1] : null;
+
+  let imageCount = 0;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8 min-h-stable">
+      <Helmet>
+        <title>{post.title} - NEETRise Blog</title>
+        <meta name="description" content={post.description} />
+        {firstImageUrl && (
+          <link rel="preload" as="image" href={firstImageUrl} fetchPriority="high" />
+        )}
+      </Helmet>
       <div className="mb-8">
         <Link to="/" className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 mb-6">
           <ChevronLeft size={16} /> Back to Home
@@ -807,9 +820,9 @@ const BlogPage = () => {
         <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
           {post.title}
         </h1>
-        <div className="mt-6 flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+        <div className="mt-6 meta-row text-sm text-slate-500 dark:text-slate-400">
           <span>{post.meta}</span>
-          <span>•</span>
+          <span className="mx-2">•</span>
           <span>{(post as any).formattedDate}</span>
         </div>
       </div>
@@ -818,7 +831,27 @@ const BlogPage = () => {
           {post.description}
         </p>
         <div className="space-y-6 text-lg leading-relaxed text-slate-700 dark:text-slate-400">
-          <Markdown>{post.content}</Markdown>
+          <Markdown
+            components={{
+              img: ({ node, ...props }) => {
+                const isFirst = props.src === firstImageUrl;
+                return (
+                  <img 
+                    {...props} 
+                    width="800"
+                    height="450"
+                    loading={isFirst ? "eager" : "lazy"}
+                    fetchPriority={isFirst ? "high" : "low"}
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    className="rounded-2xl shadow-lg my-8 w-full h-auto aspect-video object-cover"
+                  />
+                );
+              }
+            }}
+          >
+            {post.content}
+          </Markdown>
         </div>
       </div>
 

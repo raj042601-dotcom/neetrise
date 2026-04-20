@@ -105,10 +105,10 @@ const ChapterSEOPage = () => {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 min-h-stable">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 min-h-stable skeleton-container">
         <div className="mb-12 flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 meta-row">
               <div className="h-8 w-8 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-800" />
               <div className="h-4 w-32 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
             </div>
@@ -126,8 +126,8 @@ const ChapterSEOPage = () => {
     );
   }
 
-  if (!subject) return <div className="py-20 text-center min-h-[60vh]">Subject Not Found</div>;
-  if (!chapter) return <div className="py-20 text-center min-h-[60vh]">Chapter Not Found</div>;
+  if (!subject) return <div className="py-20 text-center min-h-[70vh]">Subject Not Found</div>;
+  if (!chapter) return <div className="py-20 text-center min-h-[70vh]">Chapter Not Found</div>;
   
   const formatTitle = (id: string) => {
     return id
@@ -138,15 +138,6 @@ const ChapterSEOPage = () => {
 
   const chapterName = chapterData?.name || (chapter ? chapter.name : formatTitle(chapterId || ''));
   const questions = chapterData?.questions || [];
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Loading Chapter Content...</h2>
-      </div>
-    );
-  }
 
   // SEO dynamic content
   const pageTitle = `NEET ${chapterName} NCERT-Based Questions with Solutions 2026`;
