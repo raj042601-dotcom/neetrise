@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { 
   BookOpen, 
   CheckCircle2, 
@@ -137,9 +139,16 @@ function useBlogs() {
         try {
           const fetchedBlogs = snapshot.docs.map(doc => {
             const data = doc.data();
+            
+            // Link Correction: Replace neet@nta.ac.in with https://neet.nta.nic.in/
+            const sanitize = (text: any) => typeof text === 'string' ? text.replace(/neet@nta\.ac\.in/g, 'https://neet.nta.nic.in/') : text;
+
             return {
               id: doc.id,
               ...data,
+              title: sanitize(data.title),
+              description: sanitize(data.description),
+              content: sanitize(data.content),
               formattedDate: data?.createdAt?.toDate ? data.createdAt.toDate().toLocaleDateString('en-IN', {
                 day: 'numeric',
                 month: 'short',
@@ -832,6 +841,8 @@ const BlogPage = () => {
         </p>
         <div className="space-y-6 text-lg leading-relaxed text-slate-700 dark:text-slate-400">
           <Markdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeRaw]}
             components={{
               img: ({ node, ...props }) => {
                 const isFirst = props.src === firstImageUrl;
@@ -847,7 +858,15 @@ const BlogPage = () => {
                     className="rounded-2xl shadow-lg my-8 w-full h-auto aspect-video object-cover"
                   />
                 );
-              }
+              },
+              a: ({ node, ...props }) => (
+                <a 
+                  {...props} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline font-medium hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 transition-colors break-all"
+                />
+              )
             }}
           >
             {post.content}
