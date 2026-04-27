@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import Markdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import { 
@@ -775,6 +776,8 @@ const BlogPage = () => {
   const { blogs, loading } = useBlogs();
   const post = blogs.find(p => (p.slug === slug) || ((p as any).id === slug));
 
+  const sanitizedContent = useMemo(() => post ? DOMPurify.sanitize(post.content) : '', [post?.content]);
+
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6 lg:px-8 min-h-stable skeleton-container">
@@ -805,7 +808,7 @@ const BlogPage = () => {
   if (!post) return <div className="py-20 text-center min-h-[70vh]">Blog post not found</div>;
 
   // Extract first image URL for LCP optimization
-  const firstImageMatch = post.content.match(/!\[.*?\]\((.*?)\)/);
+  const firstImageMatch = post.content.match(/!\[.*?\]\((.*?)\)/) || post.content.match(/<img.*?src=["'](.*?)["']/);
   const firstImageUrl = firstImageMatch ? firstImageMatch[1] : null;
 
   let imageCount = 0;
@@ -866,10 +869,24 @@ const BlogPage = () => {
                   rel="noopener noreferrer"
                   className="text-blue-600 underline font-medium hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 transition-colors break-all"
                 />
-              )
+              ),
+              p: ({ children }) => <p className="mb-6">{children}</p>,
+              ul: ({ children }) => <ul className="list-disc pl-6 mb-6 space-y-2">{children}</ul>,
+              ol: ({ children }) => <ol className="list-decimal pl-6 mb-6 space-y-2">{children}</ol>,
+              h2: ({ children }) => <h2 className="text-3xl font-bold text-slate-900 dark:text-white mt-12 mb-6">{children}</h2>,
+              h3: ({ children }) => <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-8 mb-4">{children}</h3>,
+              table: ({ children }) => (
+                <div className="overflow-x-auto my-8 rounded-xl border border-slate-200 dark:border-slate-800">
+                  <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                    {children}
+                  </table>
+                </div>
+              ),
+              th: ({ children }) => <th className="bg-slate-50 dark:bg-slate-800/50 px-4 py-3 text-left text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">{children}</th>,
+              td: ({ children }) => <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800">{children}</td>
             }}
           >
-            {post.content}
+            {sanitizedContent}
           </Markdown>
         </div>
       </div>
@@ -2736,6 +2753,8 @@ const AdminPanel = ({ showToast }: { showToast: (msg: string, type?: 'success' |
     description: '',
     content: ''
   });
+  const [showBlogPreview, setShowBlogPreview] = useState(false);
+  const sanitizedBlogPreview = useMemo(() => DOMPurify.sanitize(blogForm.content), [blogForm.content]);
 
   // Subject Question State
   const [subjectForm, setSubjectForm] = useState({
@@ -3281,8 +3300,34 @@ const AdminPanel = ({ showToast }: { showToast: (msg: string, type?: 'success' |
                 <input type="text" required value={blogForm.description} onChange={(e) => setBlogForm({ ...blogForm, description: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white" />
               </div>
               <div>
-                <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Content (Markdown supported)</label>
-                <textarea required rows={8} value={blogForm.content} onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white" />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Content (HTML & Markdown supported)</label>
+                  <button 
+                    type="button"
+                    onClick={() => setShowBlogPreview(!showBlogPreview)}
+                    className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    <Search size={14} />
+                    {showBlogPreview ? 'Edit Source' : 'Preview HTML'}
+                  </button>
+                </div>
+                
+                {showBlogPreview ? (
+                  <div className="min-h-[320px] rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-950 prose prose-slate dark:prose-invert max-w-none">
+                    <Markdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                      {sanitizedBlogPreview}
+                    </Markdown>
+                  </div>
+                ) : (
+                  <textarea 
+                    required 
+                    rows={12} 
+                    value={blogForm.content} 
+                    onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })} 
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-sm focus:border-blue-500 focus:outline-none dark:border-slate-800 dark:bg-slate-950 dark:text-white" 
+                    placeholder="Paste your raw HTML here... or write Markdown"
+                  />
+                )}
               </div>
               <button type="submit" disabled={loading} className="w-full rounded-xl bg-blue-600 py-4 font-bold text-white transition-all hover:bg-blue-700 disabled:opacity-50">
                 {loading ? 'Adding...' : 'Add Blog'}
