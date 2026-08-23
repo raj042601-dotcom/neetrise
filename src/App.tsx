@@ -126,6 +126,28 @@ const CHAPTER_SEO_LIST: Record<string, string[]> = {
   ]
 };
 
+// --- Hidden Blogs Config ---
+const HIDDEN_BLOG_TITLES = [
+  "RE-NEET 2026 Admit Card Download Link: Hall Ticket, Exam Date, Reporting Time & Official NTA Updates",
+  "Re-NEET 2026 Exam City Update: Official Link to Change Exam Centre & City Preference",
+  "NEET 2026 Cancelled? Big RE-NEET Update, New Admit Card & Official NTA News",
+  "NEET 2026 Exam Day Rules: Reporting Time, Dress Code, Documents & Entry Guidelines",
+  "NEET Admit Card 2026 Release Date, Direct Download Link @ neet.nta.nic.in",
+  "NEET 2026 Postponed Due to War? Full Reality & Official Update",
+  "NEET Admit Card 2026: Release Date, Download Link, Steps & Latest Updates"
+];
+
+const normalizeBlogTitle = (t: string) => (t || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const HIDDEN_BLOG_TITLES_NORMALIZED = new Set(
+  HIDDEN_BLOG_TITLES.map(normalizeBlogTitle)
+);
+
+export const isHiddenBlog = (post: any) => {
+  if (!post || !post.title) return false;
+  return HIDDEN_BLOG_TITLES_NORMALIZED.has(normalizeBlogTitle(post.title));
+};
+
 // --- Hooks ---
 function useBlogs() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
@@ -589,6 +611,7 @@ const FeatureCard = ({ title, description, icon: Icon, color, path }: { title: s
 
 const BlogSection = () => {
   const { blogs, loading } = useBlogs();
+  const visibleBlogs = blogs.filter(post => !isHiddenBlog(post));
   
   return (
     <section className="py-16 sm:py-24 bg-white dark:bg-slate-950 cv-auto">
@@ -613,11 +636,11 @@ const BlogSection = () => {
               </div>
             ))}
           </div>
-        ) : blogs.length === 0 ? (
+        ) : visibleBlogs.length === 0 ? (
           <div className="text-center py-12 text-slate-500">No blogs found. Check back later!</div>
         ) : (
           <div className="space-y-0">
-            {blogs.slice(0, 3).map((post, index) => (
+            {visibleBlogs.slice(0, 3).map((post, index) => (
               <div key={post.slug || (post as any).id} className="group relative py-8 first:pt-0 last:pb-0">
                 {index !== 0 && <div className="absolute top-0 left-0 right-0 h-px bg-slate-100 dark:bg-slate-800" />}
                 <div className="flex flex-col gap-2">
@@ -667,6 +690,7 @@ const AllBlogsPage = () => {
   const categories = ['ALL', 'STRATEGY', 'BOOKS', 'TIPS', 'MISTAKES', 'NEWS'];
 
   const filteredBlogs = blogs.filter(post => {
+    if (isHiddenBlog(post)) return false;
     const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          post.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'ALL' || post.category === selectedCategory;
