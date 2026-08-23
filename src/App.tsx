@@ -637,8 +637,6 @@ const BlogSection = () => {
                   </p>
                   <div className="mt-4 flex items-center gap-4 text-xs font-medium text-slate-400 dark:text-slate-500">
                     <span>{post.meta}</span>
-                    <span>•</span>
-                    <span>{(post as any).formattedDate}</span>
                   </div>
                 </div>
               </div>
@@ -755,8 +753,6 @@ const AllBlogsPage = () => {
                 </p>
                 <div className="mt-4 meta-row text-xs font-medium text-slate-400 dark:text-slate-500">
                   <span>{post.meta}</span>
-                  <span className="mx-2">•</span>
-                  <span>{(post as any).formattedDate}</span>
                 </div>
               </div>
             </div>
@@ -786,7 +782,6 @@ const BlogPage = () => {
           <Skeleton className="h-4 w-24 mb-3" />
           <Skeleton className="h-12 w-full mb-4" />
           <div className="mt-6 flex gap-4 meta-row">
-            <Skeleton className="h-4 w-32" />
             <Skeleton className="h-4 w-32" />
           </div>
         </div>
@@ -834,8 +829,6 @@ const BlogPage = () => {
         </h1>
         <div className="mt-6 meta-row text-sm text-slate-500 dark:text-slate-400">
           <span>{post.meta}</span>
-          <span className="mx-2">•</span>
-          <span>{(post as any).formattedDate}</span>
         </div>
       </div>
       <div className="prose prose-slate dark:prose-invert max-w-none">
